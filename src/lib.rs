@@ -15,6 +15,11 @@ pub struct ConnectorTokenClaims {
     pub iss: String,
     /// Expiry timestamp in Unix milliseconds.
     pub exp: UnixMillis,
+    /// Issued-at timestamp in Unix milliseconds. Set at mint time so
+    /// the service side can report a meaningful `issued_at` in
+    /// `ConnectorCallContext` rather than the verification time.
+    /// Added in 0.2.0 per the Wave A Gate-2 follow-up decision.
+    pub iat: UnixMillis,
     /// Signing key identifier used for token verification.
     pub kid: String,
     /// Target connector realm identifier.
@@ -346,6 +351,7 @@ mod tests {
         ConnectorTokenClaims {
             iss: "lowerer.main".to_owned(),
             exp: UnixMillis(1_800_000_000_000),
+            iat: UnixMillis(1_799_999_880_000),
             kid: "lowerer-signing-key-2026-04".to_owned(),
             realm: "llm".to_owned(),
             tenant: uuid("11111111-1111-4111-8111-111111111111"),
@@ -381,6 +387,7 @@ mod tests {
         let claims = ConnectorTokenClaims {
             iss: String::new(),
             exp: UnixMillis(0),
+            iat: UnixMillis(0),
             kid: String::new(),
             realm: String::new(),
             tenant: Uuid::nil(),

@@ -9,6 +9,26 @@ this crate adheres to
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-22
+
+**Breaking.** `ConnectorTokenClaims` gained an `iat: UnixMillis`
+field (issued-at, in Unix milliseconds), placed between `exp`
+and `kid`. The CBOR wire form now has ten map entries instead
+of nine; wire-level consumers must regenerate any pinned test
+vectors. Lands the Wave A Gate-2 follow-up decision (option
+(A) from
+`docs/notes-to-humans/2026-04-22-0011-phase-5-wave-a-claude-review.md`):
+`ConnectorCallContext.issued_at` is now populated from
+`claims.iat` on the service side instead of the verification
+timestamp, so the field name's meaning finally matches its
+value.
+
+No other API changes. The rest of the crate surface
+(`ConnectorCallContext`, `RealmId`, `RealmPublicKey`,
+`RealmRegistry`, `ConnectorSignedToken`,
+`ConnectorEncryptedPayload`, `ImplementationError`) is
+unchanged from 0.1.0.
+
 ## [0.1.0] - 2026-04-22
 
 - Added `ConnectorTokenClaims` with the connector authorization-token
