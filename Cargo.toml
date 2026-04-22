@@ -9,6 +9,13 @@ repository = "https://github.com/metastable-void/philharmonic-connector-common"
 description = "Shared vocabulary for the Philharmonic connector layer: COSE token and payload types, realm model, ConnectorCallContext, shared error types."
 
 [dependencies]
+philharmonic-types = "0.3"
+coset = "0.4"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
+serde_json = "1"
 
 [profile.release]
 opt-level = 3

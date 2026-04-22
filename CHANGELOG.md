@@ -9,9 +9,21 @@ this crate adheres to
 
 ## [Unreleased]
 
-Implementation pending. See the
-[Philharmonic workspace ROADMAP](https://github.com/metastable-void/philharmonic-workspace/blob/main/ROADMAP.md)
-for the phase that populates this crate.
+- Added `ConnectorTokenClaims` with the connector authorization-token
+  claim set (`iss`, `exp`, `kid`, `realm`, `tenant`, `inst`, `step`,
+  `config_uuid`, `payload_hash`).
+- Added `ConnectorCallContext` for verified framework metadata delivered
+  to connector implementations.
+- Added realm key model types: `RealmId`, `RealmPublicKey`, and
+  `RealmRegistry` (`kid` lookup, duplicate-`kid` rejection, ML-KEM-768
+  public-key length validation).
+- Added thin COSE wrapper types: `ConnectorSignedToken` and
+  `ConnectorEncryptedPayload`.
+- Added `ImplementationError` as the shared connector implementation
+  error taxonomy.
+- Added unit tests for serde round-trips, realm-registry lookup
+  semantics, ML-KEM key-length validation, and COSE wrapper smoke
+  construction.
 
 ## [0.0.0]
 
