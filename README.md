@@ -1,36 +1,53 @@
 # philharmonic-connector-common
 
-Shared connector-layer vocabulary for Philharmonic v1.
+Shared vocabulary for the Philharmonic connector layer.
 
 This crate is intentionally **types-only**. It defines the claim,
-context, realm, wrapper, and error shapes used by connector client/
-router/service crates. It does **not** perform cryptographic
-operations.
+context, realm, wrapper, and error shapes used by
+`philharmonic-connector-client` (mint + encrypt),
+`philharmonic-connector-service` (verify + decrypt), and
+`philharmonic-connector-router` (transport-only dispatch). It does
+**not** perform any cryptographic operation — no signing, no
+verifying, no KEM encapsulation, no AEAD. Those live on the client
+and service sides.
 
-Part of the Philharmonic crate family:
+Part of the Philharmonic workspace:
 https://github.com/metastable-void/philharmonic-workspace
 
 ## What's in this crate
 
-- `ConnectorTokenClaims` — COSE_Sign1 payload claims used to authorize
-  connector calls.
-- `ConnectorCallContext` — verified metadata passed to connector
-  implementations.
-- `RealmId`, `RealmPublicKey`, `RealmRegistry` — realm key model with
-  `kid` lookup and duplicate-key protection.
-- `ConnectorSignedToken`, `ConnectorEncryptedPayload` — thin wrappers
-  around `coset::CoseSign1` and `coset::CoseEncrypt0`.
-- `ImplementationError` — shared implementation-level error taxonomy.
+- `ConnectorTokenClaims` — the COSE_Sign1 payload carried by each
+  connector authorization token. Ten fields: `iss`, `exp`, `iat`
+  (issued-at; added in `0.2.0`), `kid`, `realm`, `tenant`, `inst`,
+  `step`, `config_uuid`, `payload_hash`.
+- `ConnectorCallContext` — verified metadata delivered to connector
+  implementations after the service side has finished checking the
+  token. Drops the `iss` / `kid` bookkeeping claims and exposes
+  `issued_at` (sourced from `claims.iat`) + `expires_at`.
+- `RealmId`, `RealmPublicKey`, `RealmRegistry` — per-realm KEM public
+  key model with `kid` indexing, validity-window checks, duplicate-
+  key protection, and a named ML-KEM-768 public-key length constant
+  (`MLKEM768_PUBLIC_KEY_LEN = 1184`).
+- `ConnectorSignedToken`, `ConnectorEncryptedPayload` — thin newtypes
+  around `coset::CoseSign1` / `coset::CoseEncrypt0` so the token /
+  payload types appear in public APIs without forcing every caller
+  to pull `coset` directly.
+- `ImplementationError` — shared error taxonomy that individual
+  connector implementations use to report failures back through the
+  service layer.
 
 ## What's out of scope
 
 - COSE signing / verification.
 - COSE encryption / decryption.
-- ML-KEM / X25519 / HKDF / AES primitive calls.
+- ML-KEM / X25519 / HKDF / AES-GCM primitive calls.
 - Payload-hash computation.
 
-Those are implemented in later roadmap phases (`connector-client` and
-`connector-service`).
+Those land in `philharmonic-connector-client` (lowerer-side) and
+`philharmonic-connector-service` (realm-side). Splitting them out
+keeps this crate a zero-crypto, cheap dependency for any workspace
+member that only needs to name the shapes (e.g. the workflow engine
+referring to `ConnectorCallContext`).
 
 ## Quick example
 
@@ -43,6 +60,7 @@ use philharmonic_connector_common::{
 let claims = ConnectorTokenClaims {
     iss: "lowerer.main".to_owned(),
     exp: UnixMillis(1_800_000_000_000),
+    iat: UnixMillis(1_799_999_880_000),
     kid: "lowerer-signing-key-2026-04".to_owned(),
     realm: "llm".to_owned(),
     tenant: Uuid::new_v4(),
@@ -67,9 +85,20 @@ let _selected = registry.lookup(&claims.kid);
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
+## Versioning notes
+
+- `0.2.0` — adds the `iat: UnixMillis` claim to
+  `ConnectorTokenClaims` (placed between `exp` and `kid`).
+  **Breaking** at the CBOR wire level: the claims map now has ten
+  entries instead of nine, so any pinned test vectors must be
+  regenerated. `ConnectorCallContext.issued_at` is now populated
+  from `claims.iat` (mint time) instead of the verification
+  timestamp. See `CHANGELOG.md` for the full entry.
+- `0.1.0` — initial publish (2026-04-22).
+
 ## License
 
-Dual-licensed under `Apache-2.0 OR MPL-2.0`.
-See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MPL](LICENSE-MPL).
+Dual-licensed under `Apache-2.0 OR MPL-2.0`. See
+[LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MPL](LICENSE-MPL).
 
 SPDX-License-Identifier: `Apache-2.0 OR MPL-2.0`
