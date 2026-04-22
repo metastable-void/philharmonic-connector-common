@@ -9,6 +9,8 @@ this crate adheres to
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-22
+
 - Added `ConnectorTokenClaims` with the connector authorization-token
   claim set (`iss`, `exp`, `kid`, `realm`, `tenant`, `inst`, `step`,
   `config_uuid`, `payload_hash`).
@@ -24,6 +26,8 @@ this crate adheres to
 - Added unit tests for serde round-trips, realm-registry lookup
   semantics, ML-KEM key-length validation, and COSE wrapper smoke
   construction.
+- Verified clean under `cargo +nightly miri test` for the full test
+  suite prior to publish.
 
 ## [0.0.0]
 
