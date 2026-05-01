@@ -1,3 +1,5 @@
+//! Shared types for Philharmonic connector authorization and payload envelopes.
+
 use std::collections::{HashMap, hash_map::Entry};
 
 use serde::{Deserialize, Serialize};
@@ -136,8 +138,14 @@ impl RealmPublicKey {
 /// Validation failures for `RealmPublicKey`.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum RealmPublicKeyError {
+    /// ML-KEM-768 public key had an unexpected byte length.
     #[error("invalid ML-KEM-768 public-key length: expected {expected} bytes, got {actual}")]
-    InvalidMlkemPublicKeyLength { expected: usize, actual: usize },
+    InvalidMlkemPublicKeyLength {
+        /// Expected byte length.
+        expected: usize,
+        /// Actual byte length received.
+        actual: usize,
+    },
 }
 
 /// In-memory registry of realm public keys, indexed by `kid`.
@@ -195,9 +203,14 @@ impl RealmRegistry {
 /// Insertion failures for `RealmRegistry`.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum RealmRegistryInsertError {
+    /// A key with the same `kid` was already registered.
     #[error("realm key with kid '{kid}' is already registered")]
-    DuplicateKid { kid: String },
+    DuplicateKid {
+        /// The duplicated key identifier.
+        kid: String,
+    },
 
+    /// The key itself failed field-level validation.
     #[error("invalid realm public key: {0}")]
     InvalidKey(#[from] RealmPublicKeyError),
 }
@@ -284,29 +297,62 @@ impl From<ConnectorEncryptedPayload> for CoseEncrypt0 {
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ImplementationError {
+    /// Connector configuration was invalid or incomplete.
     #[error("invalid config: {detail}")]
-    InvalidConfig { detail: String },
+    InvalidConfig {
+        /// Human-readable description of the configuration problem.
+        detail: String,
+    },
 
+    /// Upstream service returned a non-success HTTP status.
     #[error("upstream returned non-success status {status}: {body}")]
-    UpstreamError { status: u16, body: String },
+    UpstreamError {
+        /// HTTP status code from the upstream.
+        status: u16,
+        /// Response body from the upstream.
+        body: String,
+    },
 
+    /// Upstream service could not be reached.
     #[error("upstream unreachable: {detail}")]
-    UpstreamUnreachable { detail: String },
+    UpstreamUnreachable {
+        /// Human-readable description of the connectivity problem.
+        detail: String,
+    },
 
+    /// Upstream service did not respond within the allowed time.
     #[error("upstream timeout")]
     UpstreamTimeout,
 
+    /// Request or response failed schema validation.
     #[error("schema validation failed: {detail}")]
-    SchemaValidationFailed { detail: String },
+    SchemaValidationFailed {
+        /// Human-readable description of the validation failure.
+        detail: String,
+    },
 
+    /// Upstream response body exceeded the configured size limit.
     #[error("response too large: limit {limit} bytes, got {actual} bytes")]
-    ResponseTooLarge { limit: usize, actual: usize },
+    ResponseTooLarge {
+        /// Maximum allowed response size in bytes.
+        limit: usize,
+        /// Actual response size in bytes.
+        actual: usize,
+    },
 
+    /// Caller-supplied request was invalid.
     #[error("invalid request: {detail}")]
-    InvalidRequest { detail: String },
+    InvalidRequest {
+        /// Human-readable description of the request problem.
+        detail: String,
+    },
 
+    /// An internal error occurred in the connector implementation.
     #[error("internal implementation error: {detail}")]
-    Internal { detail: String },
+    Internal {
+        /// Human-readable description of the internal error.
+        detail: String,
+    },
 }
 
 impl ImplementationError {
