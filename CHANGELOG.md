@@ -9,6 +9,11 @@ this crate adheres to
 
 ## [Unreleased]
 
+## [0.2.1]
+
+- Added crate-level doc comment.
+- Added doc comments on error variants and fields.
+
 ## [0.2.0] - 2026-04-22
 
 **Breaking.** `ConnectorTokenClaims` gained an `iat: UnixMillis`
